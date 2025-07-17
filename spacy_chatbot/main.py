@@ -2,7 +2,7 @@ import random
 import re
 import spacy
 
-nlp = spacy.load("./en_core_web_sm")
+nlp = spacy.load("spacy_chatbot/en_core_web_sm/en_core_web_sm-3.7.1")
 
 BOT_NAME = "TravelBot"
 greetings = [

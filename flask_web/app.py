@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import sys
 import os
+import random
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from spacy_chatbot import main as spacy_main
 
@@ -24,5 +25,10 @@ def chat():
     bot_reply = get_bot_reply(user_message)
     return jsonify({"reply": bot_reply})
 
+# if __name__ == "__main__":
+#     app.run(debug=True) 
+
 if __name__ == "__main__":
-    app.run(debug=True) 
+    # Use Render-provided PORT or fall back to a random port for local testing
+    port = int(os.environ.get("PORT", random.randint(4000, 9000)))
+    app.run(host="0.0.0.0", port=port, debug=True)

@@ -21,31 +21,51 @@ def get_gsheet_client():
 def write_user_info_to_sheet(user_info):
     import gspread
     from google.oauth2.service_account import Credentials
+    import time
 
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
     CREDENTIALS_FILE = 'service_account.json'
     SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1lWAk1cOb7fY5EJJXCm12XLc4ohNTQ25jwQvH5s4B2aU/edit?usp=sharing'
 
-    creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=SCOPES)
-    gc = gspread.authorize(creds)
-    sh = gc.open_by_url(SPREADSHEET_URL)
-    worksheet = sh.sheet1
+    # Retry logic for network issues
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=SCOPES)
+            gc = gspread.authorize(creds)
+            sh = gc.open_by_url(SPREADSHEET_URL)
+            worksheet = sh.sheet1
 
-    # Write header if sheet is empty
-    if worksheet.row_count == 0 or not worksheet.get_all_values():
-        worksheet.append_row([
-            "Name", "mail", "number", "Type", "Date", "Departure", "Arrival"
-        ])
+            # Write header if sheet is empty
+            if worksheet.row_count == 0 or not worksheet.get_all_values():
+                worksheet.append_row([
+                    "Name", "mail", "number", "Type", "Date", "Departure", "Arrival"
+                ])
 
-    worksheet.append_row([
-        user_info.get("name", ""),
-        user_info.get("email", ""),
-        user_info.get("phone", ""),
-        user_info.get("booking_type", ""),
-        user_info.get("booking_date", ""),
-        user_info.get("departure", ""),
-        user_info.get("arrival", "")
-    ])
+            worksheet.append_row([
+                user_info.get("name", ""),
+                user_info.get("email", ""),
+                user_info.get("phone", ""),
+                user_info.get("booking_type", ""),
+                user_info.get("booking_date", ""),
+                user_info.get("departure", ""),
+                user_info.get("arrival", "")
+            ])
+            return True  # Success
+        except Exception as e:
+            error_msg = str(e)
+            if "invalid_grant" in error_msg.lower() or "jwt" in error_msg.lower():
+                raise Exception("Invalid service account credentials. Please regenerate your Google service account key.")
+            elif "connection" in error_msg.lower() or "network" in error_msg.lower():
+                if attempt < max_retries - 1:
+                    time.sleep(2)  # Wait before retry
+                    continue
+                else:
+                    raise Exception("Network connection error. Please check your internet connection and try again.")
+            else:
+                raise Exception(f"Google Sheets error: {error_msg}")
+    
+    raise Exception("Failed to connect to Google Sheets after multiple attempts.")
 
 nlp = spacy.load("spacy_chatbot/en_core_web_sm/en_core_web_sm-3.7.1")
 
@@ -738,7 +758,9 @@ def generate_reply(intent, entities, message):
             })
             write_user_info_to_sheet(combined_info)
         except Exception as e:
-            summary += f"\n(There was an error saving your info: {e})"
+            summary += f"\n⚠️ {e}"
+            summary += "\n\nYour booking details are saved locally, but there was an issue saving to Google Sheets."
+            summary += "\nPlease check your service account credentials or try again later."
         session.user_info = {}
         session.booking_info = {"type": None, "location": None, "date": None, "people": None}
         session.last_bot_message = summary
@@ -760,7 +782,7 @@ def generate_reply(intent, entities, message):
                     write_user_info_to_sheet(combined_info)
                     reply = "Your booking and information have been saved!"
                 except Exception as e:
-                    reply = f"There was an error saving your info: {e}"
+                    reply = f"⚠️ {e}\n\nYour booking details are saved locally, but there was an issue saving to Google Sheets. Please check your service account credentials or try again later."
                 session.confirm_user_info = False
                 session.user_info = {}
                 session.booking_info = {"type": None, "location": None, "date": None, "people": None}

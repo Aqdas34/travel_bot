@@ -4,6 +4,14 @@ import spacy
 import gspread
 from google.oauth2.service_account import Credentials
 
+import base64
+
+# Decode and save the credentials file
+service_account_info = base64.b64decode(os.environ['GOOGLE_CREDENTIALS_BASE64'])
+
+with open("service_account.json", "wb") as f:
+    f.write(service_account_info)
+
 # Google Sheets setup
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1lWAk1cOb7fY5EJJXCm12XLc4ohNTQ25jwQvH5s4B2aU/edit?usp=sharing"
 SHEET_ID = "1lWAk1cOb7fY5EJJXCm12XLc4ohNTQ25jwQvH5s4B2aU"

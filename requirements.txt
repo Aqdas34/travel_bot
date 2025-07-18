@@ -1,2 +1,5 @@
 Flask
 spacy
+gspread
+google-auth
+dateparser

@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>TravelBot Chat</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TravelBot Web Chat</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
         body { background: #f8fafc; }
@@ -73,55 +73,159 @@
             border-radius: 20px;
             padding: 10px 24px;
         }
+        body { font-family: Arial, sans-serif; background: #f4f4f4; }
+        #chatbox { width: 400px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #ccc; padding: 20px; }
+        #messages { height: 350px; overflow-y: auto; border: 1px solid #eee; padding: 10px; background: #fafafa; border-radius: 4px; }
+        .user { color: #007bff; margin-bottom: 8px; }
+        .bot { color: #333; margin-bottom: 8px; }
+        #input-area { display: flex; margin-top: 10px; }
+        #user-input { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        #send-btn { padding: 8px 16px; border: none; background: #007bff; color: #fff; border-radius: 4px; margin-left: 8px; cursor: pointer; }
+        .choice-btn { margin: 4px; padding: 8px 16px; border: none; border-radius: 4px; background: #28a745; color: #fff; cursor: pointer; }
+        .choice-btn:hover { background: #218838; }
+        #choices, #date-picker { margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">TravelBot</div>
-        <div class="chat-body" id="chat-body">
-            <div class="chat-message bot">
-                <div class="bubble">Welcome to TravelBot! How can I help you today?</div>
-            </div>
-        </div>
-        <form class="chat-footer" id="chat-form" autocomplete="off">
-            <input type="text" id="user-input" placeholder="Type your message..." autofocus required />
-            <button type="submit" class="btn btn-primary">Send</button>
-        </form>
+<div id="chatbox">
+    <div id="messages"></div>
+    <div id="choices" style="display:none;"></div>
+    <div id="date-picker" style="display:none;">
+        <input type="date" id="date-input">
+        <button id="date-send-btn" class="choice-btn">Select Date</button>
     </div>
-    <script>
-        const chatBody = document.getElementById('chat-body');
-        const chatForm = document.getElementById('chat-form');
-        const userInput = document.getElementById('user-input');
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Type your message...">
+        <button id="send-btn">Send</button>
+    </div>
+</div>
+<script>
+const bookingTypes = ["Hotel", "Flight", "Restaurant", "Train", "Trip", "Vacation", "Tour"];
+const messagesDiv = document.getElementById('messages');
+const userInput = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const choicesDiv = document.getElementById('choices');
+const datePickerDiv = document.getElementById('date-picker');
+const dateInput = document.getElementById('date-input');
+const dateSendBtn = document.getElementById('date-send-btn');
+const inputArea = document.getElementById('input-area');
 
-        function appendMessage(sender, text) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'chat-message ' + sender;
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            bubble.textContent = text;
-            msgDiv.appendChild(bubble);
-            chatBody.appendChild(msgDiv);
-            chatBody.scrollTop = chatBody.scrollHeight;
-        }
+let lastBotMsg = '';
+let fieldEditPrefill = '';
 
-        chatForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const message = userInput.value.trim();
-            if (!message) return;
-            appendMessage('user', message);
-            userInput.value = '';
-            try {
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message })
-                });
-                const data = await response.json();
-                appendMessage('bot', data.reply);
-            } catch (err) {
-                appendMessage('bot', 'Sorry, there was an error connecting to the server.');
+function appendMessage(sender, text) {
+    const msg = document.createElement('div');
+    msg.className = sender;
+    msg.textContent = text;
+    messagesDiv.appendChild(msg);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function showChoices(choices) {
+    choicesDiv.innerHTML = '';
+    choices.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = choice;
+        btn.onclick = () => {
+            appendMessage('user', choice);
+            choicesDiv.style.display = 'none';
+            inputArea.style.display = '';
+            sendToBot(choice);
+        };
+        choicesDiv.appendChild(btn);
+    });
+    choicesDiv.style.display = 'block';
+    inputArea.style.display = 'none';
+}
+
+function showDatePicker() {
+    dateInput.value = '';
+    datePickerDiv.style.display = 'block';
+    inputArea.style.display = 'none';
+}
+
+dateSendBtn.onclick = function() {
+    if (dateInput.value) {
+        const dateStr = new Date(dateInput.value).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        appendMessage('user', dateStr);
+        datePickerDiv.style.display = 'none';
+        inputArea.style.display = '';
+        sendToBot(dateStr);
+    }
+};
+
+function showFieldEditButtons(fields) {
+    choicesDiv.innerHTML = '';
+    fields.forEach(field => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = field;
+        btn.onclick = () => {
+            appendMessage('user', field);
+            choicesDiv.style.display = 'none';
+            inputArea.style.display = '';
+            sendToBot(field);
+        };
+        choicesDiv.appendChild(btn);
+    });
+    choicesDiv.style.display = 'block';
+    inputArea.style.display = 'none';
+}
+
+function sendToBot(message) {
+    fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+    })
+    .then(res => res.json())
+    .then(data => {
+        appendMessage('bot', data.reply);
+        lastBotMsg = data.reply;
+        // Only show choices for booking type question
+        if (data.reply.toLowerCase().includes('what would you like to book')) {
+            showChoices(bookingTypes);
+        } else if (data.reply.toLowerCase().includes('when do you want to book')) {
+            showDatePicker();
+        } else if (data.reply.toLowerCase().includes('which field would you like to change?')) {
+            // Parse fields in brackets
+            const fieldMatches = [...data.reply.matchAll(/\[([A-Za-z ]+)\]/g)].map(m => m[1]);
+            showFieldEditButtons(fieldMatches);
+        } else if (data.reply.toLowerCase().startsWith('edit your')) {
+            // Parse: Edit your [Field] (current: [value]):
+            const match = data.reply.match(/edit your ([a-z ]+) \(current: (.*)\):/i);
+            if (match) {
+                userInput.value = match[2];
+                userInput.focus();
             }
-        });
-    </script>
+            inputArea.style.display = '';
+            choicesDiv.style.display = 'none';
+            datePickerDiv.style.display = 'none';
+        } else {
+            // Always show input area for all other cases
+            inputArea.style.display = '';
+            choicesDiv.style.display = 'none';
+            datePickerDiv.style.display = 'none';
+        }
+    });
+}
+
+sendBtn.onclick = function() {
+    const msg = userInput.value.trim();
+    if (msg) {
+        appendMessage('user', msg);
+        userInput.value = '';
+        sendToBot(msg);
+    }
+};
+
+userInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') sendBtn.click();
+});
+
+// Initial greeting
+appendMessage('bot', 'Welcome to TravelBot! How can I help you today?');
+</script>
 </body>
 </html> 

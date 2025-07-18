@@ -5,47 +5,67 @@
     <title>TravelBot Chat</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        body { background: #f8fafc; }
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+            font-family: 'Inter', Arial, sans-serif;
+        }
         .chat-container {
-            max-width: 500px;
-            margin: 40px auto;
+            max-width: 420px;
+            margin: 48px auto;
             background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-            padding: 0;
+            border-radius: 18px;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.10);
             display: flex;
             flex-direction: column;
             height: 80vh;
+            min-height: 520px;
+            position: relative;
         }
         .chat-header {
-            background: #007bff;
+            background: #2563eb;
             color: #fff;
-            padding: 18px;
-            border-radius: 12px 12px 0 0;
-            font-size: 1.3rem;
+            padding: 22px 0 18px 0;
+            border-radius: 18px 18px 0 0;
+            font-size: 1.4rem;
             font-weight: 600;
             text-align: center;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .chat-header img {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #fff;
+            object-fit: cover;
+            box-shadow: 0 2px 8px #1e40af33;
         }
         .chat-body {
             flex: 1;
-            padding: 20px;
+            padding: 18px 16px 12px 16px;
             overflow-y: auto;
-            background: #f4f7fb;
+            background: #f3f6fd;
+            display: flex;
+            flex-direction: column;
         }
         .chat-message {
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             display: flex;
+            align-items: flex-end;
         }
-        .chat-message.user .bubble {
-            margin-left: auto;
-            background: #007bff;
-            color: #fff;
+        .chat-message.user {
+            justify-content: flex-end;
         }
-        .chat-message.bot .bubble {
-            margin-right: auto;
-            background: #e9ecef;
-            color: #222;
+        .chat-message.bot {
+            justify-content: flex-start;
         }
         .bubble {
             padding: 12px 18px;
@@ -53,51 +73,102 @@
             max-width: 75%;
             font-size: 1rem;
             box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            transition: background 0.2s;
+        }
+        .chat-message.user .bubble {
+            background: #2563eb;
+            color: #fff;
+            border-bottom-right-radius: 6px;
+        }
+        .chat-message.bot .bubble {
+            background: #e0e7ff;
+            color: #222;
+            border-bottom-left-radius: 6px;
         }
         .chat-footer {
             padding: 16px;
             background: #fff;
-            border-radius: 0 0 12px 12px;
-            border-top: 1px solid #eee;
+            border-radius: 0 0 18px 18px;
+            border-top: 1px solid #e5e7eb;
             display: flex;
             gap: 8px;
+            position: sticky;
+            bottom: 0;
         }
         .chat-footer input {
             flex: 1;
             border-radius: 20px;
-            border: 1px solid #ccc;
+            border: 1px solid #cbd5e1;
             padding: 10px 16px;
             font-size: 1rem;
+            background: #f8fafc;
         }
         .chat-footer button {
             border-radius: 20px;
             padding: 10px 24px;
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            font-weight: 600;
+            transition: background 0.2s;
         }
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        #chatbox { width: 400px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #ccc; padding: 20px; }
-        #messages { height: 350px; overflow-y: auto; border: 1px solid #eee; padding: 10px; background: #fafafa; border-radius: 4px; }
-        .user { color: #007bff; margin-bottom: 8px; }
-        .bot { color: #333; margin-bottom: 8px; }
-        #input-area { display: flex; margin-top: 10px; }
-        #user-input { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
-        #send-btn { padding: 8px 16px; border: none; background: #007bff; color: #fff; border-radius: 4px; margin-left: 8px; cursor: pointer; }
-        .choice-btn { margin: 4px; padding: 8px 16px; border: none; border-radius: 4px; background: #28a745; color: #fff; cursor: pointer; }
-        .choice-btn:hover { background: #218838; }
-        #choices, #date-picker { margin-top: 10px; }
+        .chat-footer button:hover {
+            background: #1e40af;
+        }
+        .choice-btn {
+            margin: 4px 6px 4px 0;
+            padding: 8px 18px;
+            border: none;
+            border-radius: 16px;
+            background: #38bdf8;
+            color: #fff;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .choice-btn:hover {
+            background: #0ea5e9;
+        }
+        #choices, #date-picker {
+            margin-top: 10px;
+        }
+        #date-picker input[type="date"] {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            font-size: 1rem;
+        }
+        @media (max-width: 600px) {
+            .chat-container {
+                max-width: 100vw;
+                min-height: 100vh;
+                border-radius: 0;
+                margin: 0;
+                height: 100vh;
+            }
+            .chat-header, .chat-footer {
+                border-radius: 0;
+            }
+        }
     </style>
 </head>
 <body>
-<div id="chatbox">
-    <div id="messages"></div>
+<div class="chat-container">
+    <div class="chat-header">
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Bot Avatar">
+        TravelBot
+    </div>
+    <div class="chat-body" id="messages"></div>
     <div id="choices" style="display:none;"></div>
     <div id="date-picker" style="display:none;">
         <input type="date" id="date-input">
         <button id="date-send-btn" class="choice-btn">Select Date</button>
     </div>
-    <div id="input-area">
-        <input type="text" id="user-input" placeholder="Type your message...">
-        <button id="send-btn">Send</button>
-    </div>
+    <form class="chat-footer" id="input-area" autocomplete="off" onsubmit="return false;">
+        <input type="text" id="user-input" placeholder="Type your message..." autofocus required />
+        <button type="submit" id="send-btn">Send</button>
+    </form>
 </div>
 <script>
 const bookingTypes = ["Hotel", "Flight", "Restaurant", "Train", "Trip", "Vacation", "Tour"];
@@ -114,10 +185,13 @@ let lastBotMsg = '';
 let fieldEditPrefill = '';
 
 function appendMessage(sender, text) {
-    const msg = document.createElement('div');
-    msg.className = sender;
-    msg.textContent = text;
-    messagesDiv.appendChild(msg);
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-message ' + sender;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    msgDiv.appendChild(bubble);
+    messagesDiv.appendChild(msgDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
